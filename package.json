@@ -1,0 +1,23 @@
+{
+  "name": "jxchen",
+  "version": "1.1.1",
+  "description": "/jxchen/1.0.0/webpack.config.js",
+  "main": "index.js",
+  "bin": {
+    "jxchen": "./bin/jxchen.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "jxchen",
+    "|",
+    "webpack",
+    "|",
+    "mdir",
+    "|",
+    "mkdir"
+  ],
+  "author": "jxchen",
+  "license": "ISC"
+}
