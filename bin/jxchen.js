@@ -1,5 +1,4 @@
-#!/usr/bin/env nodejs
-
+#!/usr/bin/env node
 var fs = require('fs');
 var path = require('path');
 var dir = process.cwd();
@@ -123,7 +122,7 @@ function createProjectVersion(c) {
 /**
  * 创建项目文件，及配置文件
  */
-function moveFiles(dir) {
+function moveFiles() {
     mkdirSync(dir);
     console.log(color.TIP + '版本目录已创建完成!');
     console.log(color.TIP + dir);
@@ -193,16 +192,18 @@ function copy(from, to, chunk) {
 /**
  * 创建项目目录
  */
-function mkdirSync(dir) {
-    if (!fs.existsSync(dir)) {
+function mkdirSync() {
+    var cwd = process.cwd();
+    var newDir = path.relative(cwd, dir);
+    if (!fs.existsSync(newDir)) { // 检索当前目录是否有此文件夹
         var pathtmp;
-        dir.split(path.sep).forEach(function (dirname) {
+        newDir.split(path.sep).forEach(function (dirname) {
             if (pathtmp) {
                 pathtmp = path.join(pathtmp, dirname);
             } else {
-                pathtmp = dirname;
+                pathtmp = path.join(cwd, dirname);
             }
-            if (!fs.existsSync(pathtmp)) fs.mkdirSync(pathtmp);
+            if (!fs.existsSync(pathtmp)) fs.mkdir(pathtmp);
         })
     }
     return true;
