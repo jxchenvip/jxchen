@@ -1,6 +1,6 @@
 {
   "name": "jxchen",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "description": "/jxchen/1.0.0/webpack.config.js",
   "main": "index.js",
   "bin": {
@@ -19,5 +19,8 @@
     "mkdir"
   ],
   "author": "jxchen",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "copy-paste": "^1.3.0"
+  }
 }
