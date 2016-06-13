@@ -14,7 +14,7 @@ project_name
 
 The easiest way to get jxchen is with npm:
 
-    npm install -g copy-paste
+    npm install jxchen -g
 
 Alternatively you can clone this git repository:
 
