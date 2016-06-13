@@ -1,26 +1,31 @@
 {
   "name": "jxchen",
-  "version": "1.1.5",
-  "description": "/jxchen/1.0.0/webpack.config.js",
-  "main": "index.js",
+  "version": "0.2.4",
+  "description": "��创建版项目\u001b[D\u001b[D\u001b[\u001b[C\u001b[C\u001b项目版本、版本号、配制文件（）\u001b[Dwebpack.config.js、gulpfile.js、gruntfile.js)",
   "bin": {
     "jxchen": "./bin/jxchen.js"
   },
+  "dependencies": {
+    "copy-paste": "^1.3.0"
+  },
+  "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jxchenvip/jxchen.git"
+  },
   "keywords": [
     "jxchen",
-    "|",
-    "webpack",
-    "|",
-    "mdir",
-    "|",
-    "mkdir"
+    "mkdir",
+    "mkversion",
+    "mkdirversion"
   ],
   "author": "jxchen",
   "license": "ISC",
-  "devDependencies": {
-    "copy-paste": "^1.3.0"
-  }
+  "bugs": {
+    "url": "https://github.com/jxchenvip/jxchen/issues"
+  },
+  "homepage": "https://github.com/jxchenvip/jxchen#readme"
 }
