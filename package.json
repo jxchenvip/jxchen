@@ -1,7 +1,7 @@
 {
   "name": "jxchen",
-  "version": "0.2.4",
-  "description": "��创建版项目\u001b[D\u001b[D\u001b[\u001b[C\u001b[C\u001b项目版本、版本号、配制文件（）\u001b[Dwebpack.config.js、gulpfile.js、gruntfile.js)",
+  "version": "0.2.6",
+  "description": "创建版项目、项目版本、版本号、配制文件(webpack.config.js、gulpfile.js(暂无)、gruntfile.js)",
   "bin": {
     "jxchen": "./bin/jxchen.js"
   },
