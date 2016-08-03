@@ -11,12 +11,36 @@ var ncp = require("copy-paste"); // 复制，粘贴
 
 
 /**
+ * 整理入参数
+ */
+var argvs = process.argv.reduce(function (o, key, index, arr) {
+    var k = key.charAt(0) == '-' ? key.substr(1) : key;
+    k = k.toLowerCase();
+    o[k] = k;
+    return o;
+}, {});
+
+
+/**
+ * 帮助
+ */
+if (argvs.h) {
+    console.log(color.TIP + 'jxchen: ')
+    console.log(color.TIP + '-h help');
+    console.log(color.TIP + '-v version');
+    process.exit();
+}
+
+/**
  * 版本号
  */
-if (process.argv[2] == '-V' || process.argv[2] == '-v') {
+if (argvs.v) {
     console.log(pkg.version);
     process.exit();
 }
+
+
+
 
 
 /**
