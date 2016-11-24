@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+
 var fs = require('fs');
 var path = require('path');
 var dir = process.cwd(); // dir 为全局变量初始为执行目录
@@ -9,25 +10,26 @@ var pkg = require('../package.json'); // 读取package.json
 var childProcess = require('child_process');
 var ncp = require("copy-paste"); // 复制，粘贴
 
-
 /**
  * 整理入参数
  */
-var argvs = process.argv.reduce(function (o, key, index, arr) {
-    var k = key.charAt(0) == '-' ? key.substr(1) : key;
-    k = k.toLowerCase();
-    o[k] = k;
+var argvs = process.argv.reduce((o, key, index, arr) => {
+    var k = key.replace(/-/g, '').toLowerCase();
+    if (/^path:/.test(k)) {
+        o['path'] = k.replace(/^path:/, '');
+    } else {
+        o[k] = k;
+    }
     return o;
 }, {});
-
 
 /**
  * 帮助
  */
 if (argvs.h) {
-    console.log(color.TIP + 'jxchen: ')
-    console.log(color.TIP + '-h help');
-    console.log(color.TIP + '-v version');
+    console.log(`${color.TIP} jxchen`);
+    console.log(`${color.TIP} -h help`);
+    console.log(`${color.TIP} -v version`);
     process.exit();
 }
 
@@ -39,43 +41,124 @@ if (argvs.v) {
     process.exit();
 }
 
-
-
-
-
 /**
- * 创建项目目录
+ * [hasProject 是否有项目文件夹]
+ * @param  {Function} callback [回调]
+ * @return {Boolean}           [是，否]
  */
-function mkdirSync() {
-    var cwd = process.cwd();
-    var newDir = path.relative(cwd, dir);
-    if (!fs.existsSync(newDir)) { // 检索当前目录是否有此文件夹
-        var pathtmp;
-        newDir.split(path.sep).forEach(function (dirname) {
-            if (pathtmp) {
-                pathtmp = path.join(pathtmp, dirname);
-            } else {
-                pathtmp = path.join(cwd, dirname);
+function hasProject(callback) {
+    if (fs.existsSync(dir)) {
+        prompt(`项目已存在，是否添加版本（y/n）`, (chunk) => {
+            chunk = chunk.toLowerCase();
+            chunk = (chunk && chunk != 'y') ? 'n' : 'y';
+            switch (chunk) {
+                case 'y':
+                    callback();
+                    break;
+                case 'n':
+                    dir = process.cwd();
+                    start();
+                    break;
             }
-            if (!fs.existsSync(pathtmp)) fs.mkdir(pathtmp);
-        })
+        });
+        return true;
     }
-    return true;
+    callback();
+    return false;
 }
 
+/**
+ * [setPorject 设置项目文件夹]
+ * @param {Function} callback [description]
+ */
+function setPorject(callback) {
+    var arg = arguments;
+    prompt(`项目名称(project name) : `, (chunk) => {
+        if (!/^[^\\/\\:\\*\\?\"<>\|]+$/.test(chunk)) {
+            console.log(`${color.TIP}项目名称只能为：数字、字母、下划线组合`);
+            arg.callee(callback);
+            return false;
+        }
+        dir = path.join(dir, chunk);
+        callback(chunk);
+    });
+}
 
 /**
- * 拷贝文件
+ * [setVersonDir 设置项目版本]
+ * @param {Function} callback [description]
+ */
+function setVersonDir(callback) {
+    var arg = arguments;
+    var ver = addVersion();
+    prompt(`版本号${ver} : `, (chunk) => {
+        chunk = chunk || ver;
+        if (!/^[^\\/\\:\\*\\?\"<>\|]+$/.test(chunk)) {
+            arg.callee(callback);
+            return false;
+        }
+        if (fs.existsSync(path.join(dir, chunk))) {
+            console.log(`${color.TIP}此版本已存在，请重新输入版本名称`)
+            arg.callee(callback);
+            return false;
+        }
+        dir = path.join(dir, chunk);
+        callback(chunk);
+    });
+}
+
+/**
+ * [setConfigFile 设置项目配制文件]
+ * @param {Function} callback [description]
+ */
+function setConfigFile(callback) {
+    prompt(`配制文件(NO) \n${color.TIP }1: webpack 2: gulp 3: grunt-all 4: grunt-relative : `, (chunk) => {
+        chunk = Number(chunk) || 0;
+        chunk = isNaN(chunk) ? 1 : chunk;
+        callback(chunk);
+    });
+}
+
+/**
+ * [createConfig 选择项目所需要的配置文件也可以为空]
+ * @param  {[Number]} chunk [配制选项]
+ */
+function createConfig(chunk) {
+    switch (chunk) {
+        case 1:
+            copy(path.join(dir_lib, 'webpack.config.js'), path.join(dir, 'webpack.config.js'));
+            break;
+        case 2:
+            copy(path.join(dir_lib, 'gulpfile.js'), path.join(dir, 'gulpfile.js'));
+            break;
+        case 3:
+            copy(path.join(dir_lib, 'gruntfile.js'), path.join(dir, 'gruntfile.js'));
+            break;
+        case 4:
+            copy(path.join(dir_lib, 'gruntfile.js'), path.join(dir, 'gruntfile.js'), 4);
+            break;
+        default:
+            console.log(color.SUCCESS + '项目目录创建完成,无配置文件！');
+            process_exit(dir);
+            break;
+    }
+}
+
+/**
+ * [copy 拷贝文件]
+ * @param  {[type]} from  [源文件路径]
+ * @param  {[type]} to    [目标文件路径]
+ * @param  {[type]} chunk [修改字段]
  */
 function copy(from, to, chunk) {
     var data = '';
     var readerStream = fs.createReadStream(from);
     readerStream.setEncoding('UTF8');
     // 处理流事件 --> data, end, and error
-    readerStream.on('data', function (chunk) {
+    readerStream.on('data', function(chunk) {
         data += chunk;
     });
-    readerStream.on('end', function () {
+    readerStream.on('end', function() {
         switch (chunk) { // 如果是grunt 需要相对压缩
             case 4:
                 data = data.replace(/'all'/g, "'relative'");
@@ -84,49 +167,22 @@ function copy(from, to, chunk) {
         var writerStream = fs.createWriteStream(to);
         writerStream.write(data, 'UTF8');
         writerStream.end();
-        writerStream.on('finish', function () {
-            console.log(color.SUCCESS + path.basename(to) + '配置文件写入成功');
-            process_exit();
+        writerStream.on('finish', function() {
+            console.log(`${color.SUCCESS}${path.basename(to)}配置文件写入成功`);
+            process_exit(dir);
         });
-        writerStream.on('error', function (err) {
+        writerStream.on('error', function(err) {
             console.log(color.ERROR + err.stack);
         });
     });
-    readerStream.on('error', function (err) {
+    readerStream.on('error', function(err) {
         console.log(color.ERROR + err.stack);
     });
 }
 
-
 /**
- * 类似confirm
- */
-function prompt(prompt, callback) {
-    process.stdout.write(color.INP + prompt);
-    process.stdin.resume();
-    process.stdin.setEncoding('utf8');
-    process.stdin.once('data', function (chunk) {
-        process.stdin.pause();
-        callback(chunk.trim());
-    });
-}
-
-/**
- * open dir
- */
-function open_dir(d) {
-    var cmd = '';
-    if (process.platform === 'darwin') {
-        cmd = 'open';
-    } else if (process.platform === 'win32') {
-        cmd = 'start';
-    }
-    childProcess.execSync(cmd + ' ' + d);
-}
-
-
-/**
- * 退出进程
+ * [process_exit 退出进程]
+ * @return {[type]} [description]
  */
 function process_exit() {
     ncp.copy(dir.replace(/\\/g, '/')); // 复制当前路径
@@ -135,115 +191,94 @@ function process_exit() {
 }
 
 /**
- * 版本号++
+ * [open_dir 打开新创建文件夹目录地址]
+ * @param  {[String]} dirname [地址]
  */
-function addVersion(c) {
-    c = c || '1.0.0';
-    while (fs.existsSync(path.join(dir, c))) {
-        c = (c.replace(/\./g, '') * 1 + 1).toString().replace(/\d{3}$/, function (a) {
-            return a.split('').join('.');
-        });
+function open_dir(dirname) {
+    var cmd = '';
+    if (process.platform === 'darwin') {
+        cmd = 'open';
+    } else if (process.platform === 'win32') {
+        cmd = 'start';
     }
-    return c;
+    childProcess.execSync(cmd + ' ' + dirname);
 }
 
-
 /**
- * 填写项目名称
+ * [mkdirSync 创建文件目录]
+ * @return {[type]} [description]
  */
-function createProjectDir(c) {
-    if (!/^[^\\/\\:\\*\\?\"<>\|]+$/.test(c)) {
-        console.log(color.TIP + '项目名称只能为：数字、字母、下划线组合');
-        mkProjectDir();
-        return false;
-    }
-
-    if (fs.existsSync(path.join(dir, c))) {
-        prompt('项目已存在，是否添加版本（y/n）', function (a) {
-            switch (a) {
-                case 'y':
-                    dir = path.join(dir, c);
-                    mkVersonDir(); // 创建版本目录
-                    break;
-                case 'n':
-                default:
-                    mkProjectDir(); // 创建版本目录
-                    break;
+function mkdirSync() {
+    var cwd = process.cwd();
+    var newDir = path.relative(cwd, dir);
+    if (!fs.existsSync(newDir)) { // 检索当前目录是否有此文件夹
+        var pathtmp;
+        newDir.split(path.sep).forEach(function(dirname) {
+            if (pathtmp) {
+                pathtmp = path.join(pathtmp, dirname);
+            } else {
+                pathtmp = path.join(cwd, dirname);
             }
+            if (!fs.existsSync(pathtmp)) {
+                fs.mkdirSync(pathtmp, '0777');
+            }
+        })
+    }
+    return true;
+}
+
+/**
+ * [prompt 类似confirm]
+ * @param  {[type]}   prompt   [description]
+ * @param  {Function} callback [description]
+ * @return {[type]}            [description]
+ */
+function prompt(prompt, callback) {
+    process.stdout.write(color.INP + prompt);
+    process.stdin.resume();
+    process.stdin.setEncoding('utf8');
+    process.stdin.once('data', function(chunk) {
+        process.stdin.pause();
+        callback(chunk.trim());
+    });
+}
+
+/**
+ * [addVersion 添加版本号]
+ * @param {[type]} c [description]
+ */
+function addVersion(chunk) {
+    chunk = chunk || '1.0.0';
+    while (fs.existsSync(path.join(dir, chunk))) {
+        chunk = (chunk.replace(/\./g, '') * 1 + 1).toString().replace(/\d{3}$/, function(str) {
+            return str.split('').join('.');
         });
+    }
+    return chunk;
+}
+
+/**
+ * [start 启动]
+ */
+function P(fnName) {
+    return new Promise((resolve, reject) => {
+        fnName(function(chunk) {
+            resolve(chunk);
+        })
+    })
+}
+
+function start() {
+    P(setPorject).then((chunk) => { // 创建项目文件夹
+        return P(hasProject);
+    }).then((chunk) => { // 设置项目版本号
+        return P(setVersonDir);
+    }).then((chunk) => { // 选择配置文件
+        return P(setConfigFile);
+    }).then((chunk) => {
+        mkdirSync(); // 生成版本文件夹
+        createConfig(chunk); // 提取配置文件
         return false;
-    }
-
-    dir = path.join(dir, c);
-    mkVersonDir(); // 创建版本目录
+    });
 }
-
-
-/**
- * 创建版本号文件夹
- */
-function createVersionDir(c) {
-    if (!c || !/^\d+\.\d+\.\d+$/.test(c.trim())) {
-        c = addVersion(c);
-    }
-    dir = path.join(dir, c);
-    mkdirSync(); // 创建文件夹目录
-    console.log(color.TIP + '版本目录已创建完成!');
-    console.log(color.TIP + dir);
-    mkConfigFile(); // 创建配制文件
-}
-
-
-/**
- * 选择项目所需要的配置文件也可以为空
- */
-function createConfigFile(c) {
-    c = c || '';
-    switch (c) {
-        case '1':
-            copy(path.join(dir_lib, 'webpack.config.js'), path.join(dir, 'webpack.config.js'));
-            // createWebpackConfig(dir);
-            break;
-        case '2':
-            copy(path.join(dir_lib, 'gulpfile.js'), path.join(dir, 'gulpfile.js'));
-            break;
-        case '3':
-            copy(path.join(dir_lib, 'gruntfile.js'), path.join(dir, 'gruntfile.js'));
-            break;
-        case '4':
-            copy(path.join(dir_lib, 'gruntfile.js'), path.join(dir, 'gruntfile.js'), 4);
-            break;
-        default:
-            console.log(color.SUCCESS + '项目目录创建完成,无配置文件！');
-            process_exit();
-            break;
-    }
-}
-
-/**
- * 创建项目目录
- */
-function mkProjectDir() {
-    prompt('项目名称(project name) : ', createProjectDir);
-}
-
-/**
- * 创建版本目录
- */
-function mkVersonDir() {
-    prompt('版本号(' + addVersion() + ') : ', createVersionDir);
-}
-
-/**
- * 是否创建配制文件
- */
-function mkConfigFile() {
-    prompt('配制文件(NO) \n' + color.TIP + '1: webpack 2: gulp 3: grunt-all 4: grunt-relative : ', createConfigFile);
-}
-
-// console.log('***      module.filename = ' + module.filename + ' ***');
-// console.log('***           __filename = ' + __filename + ' ***');
-// console.log('***            __dirname = ' + __dirname + ' ***');
-// console.log('***        process.cwd() = ' + process.cwd() + ' ***');
-// console.log('*** require.main.filename= ' + require.main.filename + ' ***');
-mkProjectDir();
+start();
