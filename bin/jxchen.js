@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-
 var fs = require('fs');
 var path = require('path');
 var dir = process.cwd(); // dir 为全局变量初始为执行目录
